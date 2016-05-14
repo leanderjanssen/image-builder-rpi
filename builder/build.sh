@@ -27,7 +27,7 @@ RAW_IMAGE="rpi-raw.img"
 RAW_IMAGE_VERSION="v0.1.1"
 
 # name of the sd-image we gonna create
-HYPRIOT_IMAGE_VERSION=${VERSION:="dirty"}
+HYPRIOT_IMAGE_VERSION=${VERSION:="vforge"}
 HYPRIOT_IMAGE_NAME="sd-card-rpi-${HYPRIOT_IMAGE_VERSION}.img"
 export HYPRIOT_IMAGE_VERSION
 

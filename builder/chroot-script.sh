@@ -51,12 +51,11 @@ echo "+dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 cgr
 echo "
 hdmi_force_hotplug=1
 core_freq=250
+dtoverlay=pi3-disable-bt
 " > boot/config.txt
 
 # /etc/modules
-echo "vchiq
-snd_bcm2835
-bcm2708-rng
+echo "bcm2708-rng
 " >> /etc/modules
 
 # create /etc/fstab
@@ -76,12 +75,6 @@ apt-get install -y \
   wireless-tools \
   ethtool \
   crda
-
-# add firmware and packages for managing bluetooth devices
-apt-get install -y \
-  --no-install-recommends \
-  bluetooth \
-  pi-bluetooth
 
 # install hypriot packages for docker-tools
 apt-get install -y \
@@ -107,6 +100,28 @@ apt-get install -y \
   "hypriot-cluster-lab=${CLUSTER_LAB_VERSION}"
 # do not run cluster-lab automatically
 systemctl disable cluster-lab.service
+
+echo "Adding ansible user"
+useradd -c Ansible -m -r -l -s /bin/bash ansible
+
+echo "Add users_ca public key"
+cat > /etc/ssh/users_ca.pub << EOF
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBJMlVDgt7UI9UFQ3LF+n+gUXXPNJDMFN46BvcvNkofB CA key for vforge.net users
+EOF
+
+echo "Configure sshd to trust users_ca"
+echo "TrustedUserCAKeys /etc/ssh/users_ca.pub
+" >> /etc/ssh/sshd_config
+
+echo "Add Ansible to sudoers.d"
+echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible
+
+# install python
+apt-get install -y python
+
+# set timezone
+rm /etc/localtime
+ln -s /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
 
 # set device label and version number
 echo "HYPRIOT_DEVICE=\"$HYPRIOT_DEVICE\"" >> /etc/os-release
