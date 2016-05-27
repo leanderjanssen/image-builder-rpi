@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -x
 # This script should be run only inside of a Docker container
-if [[ ! -f /.dockerenv && ! -f /.dockerinit ]] ; then
+if [ ! -f /.dockerenv ]; then
   echo "ERROR: script works only in a Docker container!"
   exit 1
 fi
@@ -15,7 +15,8 @@ BUILD_RESULT_PATH="/workspace"
 BUILD_PATH="/build"
 
 # config vars for the root file system
-HYPRIOT_OS_VERSION="v0.8.5"
+HYPRIOT_OS_VERSION="v0.8.6"
+ROOTFS_TAR_CHECKSUM="d1b9642317d5154ddfe5042b21232d10a036ff677cf100bcf916da81a5c811ad"
 ROOTFS_TAR="rootfs-armhf-raspbian-${HYPRIOT_OS_VERSION}.tar.gz"
 ROOTFS_TAR_PATH="${BUILD_RESULT_PATH}/${ROOTFS_TAR}"
 
@@ -24,21 +25,22 @@ echo TRAVIS_TAG="${TRAVIS_TAG}"
 
 # name of the ready made raw image for RPi
 RAW_IMAGE="rpi-raw.img"
-RAW_IMAGE_VERSION="v0.1.1"
+RAW_IMAGE_VERSION="v0.1.4"
+RAW_IMAGE_CHECKSUM="a242769dec546dbda335204d4e6bb4eb64685009d235a2a881605bdf44766b0a"
 
 # name of the sd-image we gonna create
-HYPRIOT_IMAGE_VERSION=${VERSION:="vforge"}
-HYPRIOT_IMAGE_NAME="sd-card-rpi-${HYPRIOT_IMAGE_VERSION}.img"
+HYPRIOT_IMAGE_VERSION=${VERSION:="dirty"}
+HYPRIOT_IMAGE_NAME="hypriotos-rpi-${HYPRIOT_IMAGE_VERSION}.img"
 export HYPRIOT_IMAGE_VERSION
 
 # specific versions of kernel/firmware and docker tools
-export KERNEL_BUILD="20160404-055934"
-export KERNEL_VERSION="4.1.20"
+export KERNEL_BUILD="20160520-141137"
+export KERNEL_VERSION="4.4.10"
 export DOCKER_ENGINE_VERSION="1.11.1-1"
-export DOCKER_COMPOSE_VERSION="1.7.1-38"
-export DOCKER_MACHINE_VERSION="0.4.1-72"
-export DEVICE_INIT_VERSION="0.1.5"
-export CLUSTER_LAB_VERSION="0.2.6-1"
+export DOCKER_COMPOSE_VERSION="1.7.1-40"
+export DOCKER_MACHINE_VERSION="0.7.0-26"
+export DEVICE_INIT_VERSION="0.1.7"
+export CLUSTER_LAB_VERSION="0.2.12-1"
 
 # create build directory for assembling our image filesystem
 rm -rf ${BUILD_PATH}
@@ -48,6 +50,9 @@ mkdir ${BUILD_PATH}
 if [ ! -f "${ROOTFS_TAR_PATH}" ]; then
   wget -q -O ${ROOTFS_TAR_PATH} https://github.com/hypriot/os-rootfs/releases/download/${HYPRIOT_OS_VERSION}/${ROOTFS_TAR}
 fi
+
+# verify checksum of our root filesystem
+echo "${ROOTFS_TAR_CHECKSUM} ${ROOTFS_TAR_PATH}" | sha256sum -c -
 
 # extract root file system
 tar xf ${ROOTFS_TAR_PATH} -C ${BUILD_PATH}
@@ -92,6 +97,9 @@ tar -czf /image_with_kernel_root.tar.gz -C ${BUILD_PATH} .
 if [ ! -f "${BUILD_RESULT_PATH}/${RAW_IMAGE}.zip" ]; then
   wget -q -O ${BUILD_RESULT_PATH}/${RAW_IMAGE}.zip https://github.com/hypriot/image-builder-raw/releases/download/${RAW_IMAGE_VERSION}/${RAW_IMAGE}.zip
 fi
+
+# verify checksum of the ready-made raw image
+echo "${RAW_IMAGE_CHECKSUM} ${BUILD_RESULT_PATH}/${RAW_IMAGE}.zip" | sha256sum -c -
 
 unzip -p ${BUILD_RESULT_PATH}/${RAW_IMAGE} > "/${HYPRIOT_IMAGE_NAME}"
 
